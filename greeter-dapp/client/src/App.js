@@ -1,11 +1,11 @@
-import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
-import getWeb3 from "./getWeb3";
+import React, { Component } from 'react';
+import GreeterContract from './contracts/Greeter.json';
+import getWeb3 from './getWeb3';
 
-import "./App.css";
+import './App.css';
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { greeting: '', web3: null, accounts: null, contract: null };
 
   componentDidMount = async () => {
     try {
@@ -17,9 +17,9 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
+      const deployedNetwork = GreeterContract.networks[networkId];
       const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
+        GreeterContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
 
@@ -37,15 +37,20 @@ class App extends Component {
 
   runExample = async () => {
     const { accounts, contract } = this.state;
+    const response = await contract.methods.greet().call();
 
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
+    this.setState({ greeting: response });
+  };
 
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
+  handleGreetingChange = (e) => {
+    const inputVal = e.target.value;
+    this.setState({ greeting: inputVal });
+  };
 
-    // Update state with the result.
-    this.setState({ storageValue: response });
+  formSubmitHandler = async (e) => {
+    e.preventDefault();
+    const { accounts, contract, greeting } = this.state;
+    const updatedGreeting = await contract.methods.setGreeting(greeting).send({ from: accounts[0] });
   };
 
   render() {
@@ -54,17 +59,17 @@ class App extends Component {
     }
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 40</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+        <h1>Greeter</h1>
+
+        {this.state.greeting}
+
+        <form onSubmit={this.formSubmitHandler}>
+          <label>
+            New Greeting:
+            <input type="text" value={this.state.greeting} onChange={this.handleGreetingChange}/>
+          </label>
+          <button type="submit">Submit</button>
+        </form>
       </div>
     );
   }
